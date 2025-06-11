@@ -1,1 +1,1 @@
-https://ww2.mathworks.cn/help/autoblks/ug/estimate-equivalent-circuit-lithium-ion-battery-data.html?s_tid=srchtitle_site_search_2_Battery%2520Data
+https://ww2.mathworks.cn/help/simscape-battery/ug/battery-cell-characterization-for-ev.html?s_tid=srchtitle_site_search_2_18650
