@@ -20,13 +20,13 @@ function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(d
     hppc_param.cell_capacity = param.HPPCCellCapacity;
     hppc_param.cell_initial_soc = param.HPPCCellInitialSOC;
 
-    hppc_param.data_start_idx = 300;
-    hppc_param.data_end_idx = length(data.hppcData.("time (s)"));
+    hppc_param.data_start_idx = 1;
+    hppc_param.data_end_idx = length(data.hppcData.('time (s)'));
     data_length = hppc_param.data_end_idx - hppc_param.data_start_idx + 1;
 
-    time = data.hppcData.("time (s)")(hppc_param.data_start_idx:hppc_param.data_end_idx) - data.hppcData.("time (s)")(hppc_param.data_start_idx);
-    current = data.hppcData.("current (A)")(hppc_param.data_start_idx:hppc_param.data_end_idx);
-    voltage = data.hppcData.("voltage (V)")(hppc_param.data_start_idx:hppc_param.data_end_idx);
+    time = data.hppcData.('time (s)')(hppc_param.data_start_idx:hppc_param.data_end_idx) - data.hppcData.('time (s)')(hppc_param.data_start_idx);
+    current = data.hppcData.('current (A)')(hppc_param.data_start_idx:hppc_param.data_end_idx);
+    voltage = data.hppcData.('voltage (V)')(hppc_param.data_start_idx:hppc_param.data_end_idx);
 
     delta = cumtrapz(time, current);
     soc = hppc_param.cell_initial_soc + delta  / (3600 * hppc_param.cell_capacity);
