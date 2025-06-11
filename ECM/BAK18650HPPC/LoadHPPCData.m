@@ -28,7 +28,6 @@ function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(d
     current = data.hppcData.("current (A)")(hppc_param.data_start_idx:hppc_param.data_end_idx);
     voltage = data.hppcData.("voltage (V)")(hppc_param.data_start_idx:hppc_param.data_end_idx);
 
-    soc = zeros(data_length, 1);
     delta = cumtrapz(time, current);
     soc = hppc_param.cell_initial_soc + delta  / (3600 * hppc_param.cell_capacity);
     soc = min(1, max(0, soc));
