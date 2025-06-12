@@ -1,13 +1,13 @@
-function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(datafile, param_file)
+function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(datafile, param_file, start_idx, end_idx)
     dir = pwd;
     data_path = fullfile(dir, 'Data', datafile);
     param_path = fullfile(dir, 'Data', param_file);
 
     if ~exist(data_path, 'file')
-        pm_error('Data file does not exist: %s', data_path);
+        error('Data file does not exist: %s', data_path);
     end
     if ~exist(param_path, 'file')
-        pm_error('Parameter file does not exist: %s', param_path);
+        error('Parameter file does not exist: %s', param_path);
     end
 
     data = load(data_path);
@@ -20,8 +20,12 @@ function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(d
     hppc_param.cell_capacity = param.HPPCCellCapacity;
     hppc_param.cell_initial_soc = param.HPPCCellInitialSOC;
 
-    hppc_param.data_start_idx = 1;
-    hppc_param.data_end_idx = length(data.hppcData.('time (s)'));
+    hppc_param.data_start_idx = start_idx;
+    if nargin < 4 || isempty(end_idx)
+        hppc_param.data_end_idx = length(data.hppcData.('time (s)'));
+    else
+        hppc_param.data_end_idx = end_idx;
+    end
     data_length = hppc_param.data_end_idx - hppc_param.data_start_idx + 1;
 
     time = data.hppcData.('time (s)')(hppc_param.data_start_idx:hppc_param.data_end_idx) - data.hppcData.('time (s)')(hppc_param.data_start_idx);
@@ -29,6 +33,6 @@ function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(d
     voltage = data.hppcData.('voltage (V)')(hppc_param.data_start_idx:hppc_param.data_end_idx);
 
     delta = cumtrapz(time, current);
-    soc = hppc_param.cell_initial_soc + delta  / (3600 * hppc_param.cell_capacity);
+    soc = hppc_param.cell_initial_soc + delta / (3600 * hppc_param.cell_capacity);
     soc = min(1, max(0, soc));
 end
