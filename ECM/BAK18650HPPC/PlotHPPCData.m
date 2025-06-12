@@ -1,4 +1,4 @@
-function PlotData(datafile, paramfile, plot_soc, start_idx, end_idx)
+function PlotHPPCData(datafile, paramfile, plot_soc, start_idx, end_idx)
     if nargin < 3 || isempty(plot_soc)
         plot_soc = false;
     end
