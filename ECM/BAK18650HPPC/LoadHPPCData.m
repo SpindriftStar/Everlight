@@ -20,7 +20,11 @@ function [time, current, voltage, soc, data_length, hppc_param] = LoadHPPCData(d
     hppc_param.cell_capacity = param.HPPCCellCapacity;
     hppc_param.cell_initial_soc = param.HPPCCellInitialSOC;
 
-    hppc_param.data_start_idx = start_idx;
+    if nargin < 3 || isempty(start_idx)
+        hppc_param.data_start_idx = 1;
+    else
+        hppc_param.data_end_idx = start_idx;
+    end
     if nargin < 4 || isempty(end_idx)
         hppc_param.data_end_idx = length(data.hppcData.('time (s)'));
     else
