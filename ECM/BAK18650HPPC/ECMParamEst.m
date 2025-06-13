@@ -16,9 +16,24 @@ classdef ECMParamEst
         cell_initial_soc
 
         % options for parameter estimation
-        num_rc_pairs
+        max_rc_pairs
         init_rc_param_r
         init_rc_param_tau
+    end
+
+    % 
+    properties(Access = private)
+        % open circuit voltage
+        ocv
+
+        % internal resistance
+        charge_resistance
+        discharge_resistance
+
+        % RC parameters
+        num_rc_pairs
+        rc_param_r
+        rc_param_tau
     end
 
     methods
