@@ -23,7 +23,7 @@ function [hppc_data, hppc_param] = LoadHPPCData(datafile, param_file, start_idx,
     if nargin < 3 || isempty(start_idx)
         hppc_param.data_start_idx = 1;
     else
-        hppc_param.data_end_idx = start_idx;
+        hppc_param.data_start_idx = start_idx;
     end
     if nargin < 4 || isempty(end_idx)
         hppc_param.data_end_idx = length(data.hppcData.('time (s)'));
@@ -36,7 +36,7 @@ function [hppc_data, hppc_param] = LoadHPPCData(datafile, param_file, start_idx,
     hppc_data.current = data.hppcData.('current (A)')(hppc_param.data_start_idx:hppc_param.data_end_idx);
     hppc_data.voltage = data.hppcData.('voltage (V)')(hppc_param.data_start_idx:hppc_param.data_end_idx);
 
-    delta = cumtrapz(time, current);
+    delta = cumtrapz(hppc_data.time, hppc_data.current);
     soc = hppc_param.cell_initial_soc + delta / (3600 * hppc_param.cell_capacity);
     hppc_data.soc = min(1, max(0, soc));
 end
