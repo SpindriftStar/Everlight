@@ -1,4 +1,4 @@
-classdef ECMParamEst
+classdef ECMParamEst < handle
     properties(SetAccess = immutable)
         % raw data
         hppc_data_time
@@ -21,7 +21,6 @@ classdef ECMParamEst
         init_rc_param_tau
     end
 
-    % 
     properties(Access = private)
         % open circuit voltage
         ocv
@@ -34,6 +33,26 @@ classdef ECMParamEst
         num_rc_pairs
         rc_param_r
         rc_param_tau
+    end
+
+    properties(Access = private)
+        num_discharge_pulses
+        discharge_pulse_start_idx
+        discharge_pulse_end_idx
+        discharge_relax_start_idx
+        discharge_relax_end_idx
+
+        num_charge_pulses
+        charge_pulse_start_idx
+        charge_pulse_end_idx
+        charge_relax_start_idx
+        charge_relax_end_idx
+
+        num_const_current_sweeps
+        const_current_sweep_start_idx
+        const_current_sweep_end_idx
+        sweep_relax_start_idx
+        sweep_relax_end_idx
     end
 
     methods
@@ -58,9 +77,9 @@ classdef ECMParamEst
                 error('HPPC data length mismatch');
             end
 
-            obj.max_discharge_current = abc(hppc_param.max_discharge_current);
-            obj.max_charge_current = abc(hppc_param.max_charge_current);
-            obj.const_current_sweep_soc = abc(hppc_param.const_current_sweep_soc);
+            obj.max_discharge_current = abs(hppc_param.max_discharge_current);
+            obj.max_charge_current = abs(hppc_param.max_charge_current);
+            obj.const_current_sweep_soc = abs(hppc_param.const_current_sweep_soc);
             obj.tolerance = hppc_param.tolerance;
             obj.cell_capacity = hppc_param.cell_capacity;
             obj.cell_initial_soc = hppc_param.cell_initial_soc;
@@ -83,6 +102,61 @@ classdef ECMParamEst
                  length(obj.init_rc_param_tau) == obj.num_rc_pairs)
                 error('Invalid RC parameter options');
             end
+        end
+    end
+
+    methods(Access = private)
+        function ParseHPPCData(obj)
+            %discharge pulse
+            obj.discharge_pulse_start_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_discharge_current) < obj.tolerance * obj.max_discharge_current & ...
+                                                 diff(obj.hppc_data_current) < 0);
+            obj.discharge_pulse_end_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_discharge_current) < obj.tolerance * obj.max_discharge_current & ...
+                                               diff(obj.hppc_data_current) > 0);
+            obj.num_discharge_pulses = length(obj.discharge_pulse_start_idx);
+            if ~(obj.num_discharge_pulses > 0)
+                error('Discharge pulse data not found');
+            end
+            obj.discharge_pulse_end_idx = obj.discharge_pulse_end_idx(obj.discharge_pulse_end_idx > obj.discharge_pulse_start_idx(1));
+            obj.discharge_pulse_end_idx = obj.discharge_pulse_end_idx(1:obj.num_discharge_pulses);
+
+            % charge pulse
+            obj.charge_pulse_start_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_charge_current) < obj.tolerance * obj.max_charge_current & ...
+                                                  diff(obj.hppc_data_current) > 0);
+            obj.charge_pulse_end_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_charge_current) < obj.tolerance * obj.max_charge_current & ...
+                                                diff(obj.hppc_data_current) < 0);
+            obj.num_charge_pulses = length(obj.charge_pulse_start_idx);
+            if ~(obj.num_charge_pulses > 0)
+                error('Charge pulse data not found');
+            end
+            obj.charge_pulse_end_idx = obj.charge_pulse_end_idx(obj.charge_pulse_end_idx > obj.charge_pulse_start_idx(1));
+            obj.charge_pulse_end_idx = obj.charge_pulse_end_idx(1:obj.num_charge_pulses);
+
+            % const current SOC sweep
+            obj.const_current_sweep_start_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.const_current_sweep_soc) < obj.tolerance * obj.const_current_sweep_soc & ...
+                                                     diff(obj.hppc_data_current) < 0);
+            obj.const_current_sweep_end_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.const_current_sweep_soc) < obj.tolerance * obj.const_current_sweep_soc & ...
+                                                   diff(obj.hppc_data_current) > 0);
+            % limit const current SOC sweep between the 1st charge pulse and the last discharge pulse
+            obj.const_current_sweep_start_idx = obj.const_current_sweep_start_idx(obj.const_current_sweep_start_idx > obj.charge_pulse_end_idx(1));
+            obj.const_current_sweep_start_idx = obj.const_current_sweep_start_idx(obj.const_current_sweep_start_idx < obj.discharge_pulse_start_idx(end));
+            obj.num_const_current_sweeps = length(obj.const_current_sweep_start_idx);
+            if ~(obj.num_const_current_sweeps > 0)
+                error('Constant current sweep data not found');
+            end
+            obj.const_current_sweep_end_idx = obj.const_current_sweep_end_idx(obj.const_current_sweep_end_idx > obj.const_current_sweep_start_idx(1));
+            obj.const_current_sweep_end_idx = obj.const_current_sweep_end_idx(1:obj.num_const_current_sweeps);
+
+            % short relaxation between discharge pulse and charge pulse
+            obj.discharge_relax_start_idx = obj.discharge_pulse_end_idx + 1;
+            obj.discharge_relax_end_idx = obj.charge_pulse_start_idx;
+
+            % short relaxation between charge pulse and const current SOC sweep
+            obj.charge_relax_start_idx = obj.charge_pulse_end_idx + 1;
+            obj.charge_relax_end_idx = obj.const_current_sweep_start_idx;
+
+            % long relaxation between const current SOC sweep and the next discharge pulse
+            obj.sweep_relax_start_idx = obj.const_current_sweep_end_idx + 1;
+            obj.sweep_relax_end_idx = obj.discharge_pulse_start_idx;
         end
     end
 
