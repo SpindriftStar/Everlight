@@ -21,9 +21,9 @@ classdef ECMParamEst < handle
         init_rc_param_tau
     end
 
-    properties(Access = private)
+    properties(Access = public)
         % open circuit voltage
-        ocv
+        open_circuit_voltage
 
         % internal resistance
         charge_resistance
@@ -102,6 +102,8 @@ classdef ECMParamEst < handle
                  length(obj.init_rc_param_tau) == obj.num_rc_pairs)
                 error('Invalid RC parameter options');
             end
+            obj.ParseHPPCData();
+            obj.InternalResistanceEst();
         end
     end
 
@@ -157,6 +159,20 @@ classdef ECMParamEst < handle
             % long relaxation between const current SOC sweep and the next discharge pulse
             obj.sweep_relax_start_idx = obj.const_current_sweep_end_idx + 1;
             obj.sweep_relax_end_idx = obj.discharge_pulse_start_idx;
+        end
+
+        function InternalResistanceEst(obj)
+            delta_voltage_discharge_pulse = obj.hppc_data_voltage(obj.discharge_pulse_end_idx + 1) - obj.hppc_data_voltage(obj.discharge_pulse_end_idx);
+            discharge_resistance = abs(delta_voltage_discharge_pulse) / obj.max_discharge_current;
+            soc = obj.hppc_data_soc(obj.discharge_pulse_end_idx);
+            obj.discharge_resistance = array2table([soc, discharge_resistance], ...
+                                                   'VariableNames', {'SOC', 'Discharge Resistance'});
+
+            delta_voltage_charge_pulse = obj.hppc_data_voltage(obj.charge_pulse_end_idx + 1) - obj.hppc_data_voltage(obj.charge_pulse_end_idx);
+            charge_resistance = abs(delta_voltage_charge_pulse) / obj.max_charge_current;
+            soc = obj.hppc_data_soc(obj.charge_pulse_end_idx);
+            obj.charge_resistance = array2table([soc, charge_resistance], ...
+                                                   'VariableNames', {'SOC', 'Charge Resistance'});
         end
     end
 
