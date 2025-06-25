@@ -178,6 +178,12 @@ classdef ECMParamEst < handle
             obj.charge_resistance = array2table([soc, charge_resistance], ...
                                                 'VariableNames', {'SOC', 'Charge Resistance'});
         end
+
+        function OpenCircuitVoltageEst(obj)
+            obj.open_circuit_voltage = array2table([obj.hppc_data_soc(obj.open_circuit_voltage_idx), ...
+                                                   obj.hppc_data_voltage(obj.open_circuit_voltage_idx)], ...
+                                                   'VariableNames', {'SOC', 'Open Circuit Voltage'});
+        end
     end
 
     methods(Static)
