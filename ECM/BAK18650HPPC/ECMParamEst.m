@@ -53,6 +53,8 @@ classdef ECMParamEst < handle
         const_current_sweep_end_idx
         sweep_relax_start_idx
         sweep_relax_end_idx
+
+        open_circuit_voltage_idx
     end
 
     methods
@@ -123,9 +125,9 @@ classdef ECMParamEst < handle
 
             % charge pulse
             obj.charge_pulse_start_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_charge_current) < obj.tolerance * obj.max_charge_current & ...
-                                                  diff(obj.hppc_data_current) > 0);
+                                              diff(obj.hppc_data_current) > 0);
             obj.charge_pulse_end_idx = find(abs(abs(diff(obj.hppc_data_current)) - obj.max_charge_current) < obj.tolerance * obj.max_charge_current & ...
-                                                diff(obj.hppc_data_current) < 0);
+                                            diff(obj.hppc_data_current) < 0);
             obj.num_charge_pulses = length(obj.charge_pulse_start_idx);
             if ~(obj.num_charge_pulses > 0)
                 error('Charge pulse data not found');
@@ -159,6 +161,8 @@ classdef ECMParamEst < handle
             % long relaxation between const current SOC sweep and the next discharge pulse
             obj.sweep_relax_start_idx = obj.const_current_sweep_end_idx + 1;
             obj.sweep_relax_end_idx = obj.discharge_pulse_start_idx;
+
+            obj.open_circuit_voltage_idx = obj.discharge_pulse_start_idx - 1;
         end
 
         function InternalResistanceEst(obj)
@@ -172,7 +176,7 @@ classdef ECMParamEst < handle
             charge_resistance = abs(delta_voltage_charge_pulse) / obj.max_charge_current;
             soc = obj.hppc_data_soc(obj.charge_pulse_end_idx);
             obj.charge_resistance = array2table([soc, charge_resistance], ...
-                                                   'VariableNames', {'SOC', 'Charge Resistance'});
+                                                'VariableNames', {'SOC', 'Charge Resistance'});
         end
     end
 
